@@ -3,11 +3,13 @@
 @section('content')
 <div class="d-flex justify-content-between mb-3">
  <h3>Kategori Produk</h3>
+ @if (auth()->user()->role === 'admin')
  <a class="btn btn-primary" href="{{ route('categories.create') }}">Tambah Kategori</a>
+ @endif
 </div>
 <div class="card"><div class="card-body">
 <table class="table">
-<thead><tr><th>Nama</th><th>Deskripsi</th><th>Status</th><th>Jumlah Produk</th><th>Aksi</th></tr></thead>
+<thead><tr><th>Nama</th><th>Deskripsi</th><th>Status</th><th>Jumlah Produk</th>@if (auth()->user()->role === 'admin')<th>Aksi</th>@endif</tr></thead>
 <tbody>
 @forelse($categories as $category)
 <tr>
@@ -18,6 +20,7 @@
 </span>
 </td>
 <td>{{ $category->products_count }}</td>
+@if (auth()->user()->role === 'admin')
 <td>
 <a class="btn btn-sm btn-warning" href="{{ route('categories.edit',$category) }}">Edit</a>
 <form class="d-inline" method="POST" action="{{ route('categories.destroy',$category) }}">
@@ -25,8 +28,11 @@
 <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus kategori?')">Hapus</button>
 </form>
 </td></tr>
+@else
+</tr>
+@endif
 @empty
-<tr><td colspan="5">Belum ada kategori.</td></tr>
+<tr><td colspan="{{ auth()->user()->role === 'admin' ? 5 : 4 }}">Belum ada kategori.</td></tr>
 @endforelse
 </tbody></table>{{ $categories->links() }}
 </div></div>

@@ -4,25 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
-
-protected $fillable = [
-    'category_id', 'product_code', 'name', 'brand',
-    'price', 'stock', 'description',
+    protected $fillable = [
+        'category_id', 'product_code', 'name', 'brand',
+        'price', 'stock', 'description', 'image',
     ];
-    
+
     protected function casts(): array
     {
         return [
-        'price' => 'decimal:2',
-        'stock' => 'integer',
+            'price' => 'decimal:2',
+            'stock' => 'integer',
         ];
     }
 
     public function category(): BelongsTo
     {
-    return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class);
+    }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 }

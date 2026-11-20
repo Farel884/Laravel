@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,6 +13,8 @@ class CategoryStatusTest extends TestCase
 
     public function test_create_form_offers_both_category_statuses(): void
     {
+        $this->authenticateAsAdmin();
+
         $response = $this->get(route('categories.create'));
 
         $response->assertOk()
@@ -22,6 +25,8 @@ class CategoryStatusTest extends TestCase
 
     public function test_edit_form_selects_the_categories_current_status(): void
     {
+        $this->authenticateAsAdmin();
+
         $category = Category::create([
             'name' => 'Audio',
             'description' => 'Kategori perangkat audio.',
@@ -36,6 +41,8 @@ class CategoryStatusTest extends TestCase
 
     public function test_category_list_displays_active_and_inactive_statuses(): void
     {
+        $this->authenticateAsAdmin();
+
         Category::create(['name' => 'Audio', 'status' => 'active']);
         Category::create(['name' => 'Gaming', 'status' => 'inactive']);
 
@@ -48,6 +55,8 @@ class CategoryStatusTest extends TestCase
 
     public function test_category_can_be_created_with_inactive_status(): void
     {
+        $this->authenticateAsAdmin();
+
         $response = $this->post(route('categories.store'), [
             'name' => 'Audio',
             'description' => 'Kategori perangkat audio.',
@@ -63,6 +72,8 @@ class CategoryStatusTest extends TestCase
 
     public function test_category_status_can_be_changed_when_edited(): void
     {
+        $this->authenticateAsAdmin();
+
         $category = Category::create([
             'name' => 'Audio',
             'description' => 'Kategori perangkat audio.',
@@ -84,6 +95,8 @@ class CategoryStatusTest extends TestCase
 
     public function test_category_rejects_an_unsupported_status(): void
     {
+        $this->authenticateAsAdmin();
+
         $response = $this->post(route('categories.store'), [
             'name' => 'Audio',
             'description' => 'Kategori perangkat audio.',
@@ -94,5 +107,14 @@ class CategoryStatusTest extends TestCase
         $this->assertDatabaseMissing('categories', [
             'name' => 'Audio',
         ]);
+    }
+
+    private function authenticateAsAdmin(): void
+    {
+        $admin = User::factory()->create();
+        $admin->role = 'admin';
+        $admin->save();
+
+        $this->actingAs($admin);
     }
 }
