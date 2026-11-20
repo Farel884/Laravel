@@ -4,28 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Sale;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SalesController extends Controller
 {
     public function index(Request $request): View
     {
-        $validated = $request->validate([
-            'date_from' => ['nullable', 'date'],
-            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'product_id' => ['nullable', 'integer', 'exists:products,id'],
-        ]);
+        $validated = $this->validatedFilters($request);
 
-        $salesQuery = Sale::query()
+        $salesQuery = $this->filteredSalesQuery($validated)
             ->with(['product.category', 'user'])
-            ->when($validated['date_from'] ?? null, fn ($query, $date) => $query->whereDate('sold_at', '>=', $date))
-            ->when($validated['date_to'] ?? null, fn ($query, $date) => $query->whereDate('sold_at', '<=', $date))
-            ->when($validated['product_id'] ?? null, fn ($query, $productId) => $query->where('product_id', $productId))
-            ->latest('sold_at');
+            ->latest('sales.sold_at');
 
         $sales = (clone $salesQuery)->paginate(10)->withQueryString();
         $totalQuantity = (clone $salesQuery)->sum('quantity');
@@ -51,6 +46,55 @@ class SalesController extends Controller
             'transactionCount',
             'topProducts',
         ));
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $validated = $this->validatedFilters($request);
+        $sales = $this->filteredSalesQuery($validated)
+            ->join('products', 'sales.product_id', '=', 'products.id')
+            ->leftJoin('users', 'sales.user_id', '=', 'users.id')
+            ->select([
+                'sales.sold_at',
+                'products.product_code',
+                'products.name as product_name',
+                'sales.quantity',
+                'sales.unit_price',
+                'users.name as recorded_by',
+            ])
+            ->orderBy('sales.sold_at')
+            ->orderBy('sales.id')
+            ->cursor();
+
+        return response()->streamDownload(function () use ($sales): void {
+            $output = fopen('php://output', 'wb');
+
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, ['Tanggal', 'Kode Produk', 'Nama Produk', 'Jumlah', 'Harga Satuan', 'Total', 'Dicatat Oleh'], ',', '"', '');
+
+            foreach ($sales as $sale) {
+                $quantity = (int) $sale->quantity;
+                $unitPrice = (float) $sale->unit_price;
+
+                fputcsv($output, [
+                    $sale->sold_at,
+                    $this->spreadsheetSafeValue($sale->product_code),
+                    $this->spreadsheetSafeValue($sale->product_name),
+                    $quantity,
+                    number_format($unitPrice, 2, '.', ''),
+                    number_format($quantity * $unitPrice, 2, '.', ''),
+                    $this->spreadsheetSafeValue($sale->recorded_by),
+                ], ',', '"', '');
+            }
+
+            fclose($output);
+        }, 'laporan-penjualan-'.now()->format('Ymd-His').'.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function create(): View
@@ -93,5 +137,38 @@ class SalesController extends Controller
 
         return redirect()->route('sales.index')
             ->with('success', 'Penjualan berhasil dicatat dan stok telah diperbarui.');
+    }
+
+    /**
+     * @return array{date_from?: string, date_to?: string, product_id?: int|string}
+     */
+    private function validatedFilters(Request $request): array
+    {
+        return $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'product_id' => ['nullable', 'integer', 'exists:products,id'],
+        ]);
+    }
+
+    /**
+     * @param  array{date_from?: string, date_to?: string, product_id?: int|string}  $filters
+     * @return Builder<Sale>
+     */
+    private function filteredSalesQuery(array $filters): Builder
+    {
+        return Sale::query()
+            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('sales.sold_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('sales.sold_at', '<=', $date))
+            ->when($filters['product_id'] ?? null, fn (Builder $query, int|string $productId) => $query->where('sales.product_id', $productId));
+    }
+
+    private function spreadsheetSafeValue(?string $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return preg_match('/^\s*[=+\-@]/u', $value) === 1 ? "'".$value : $value;
     }
 }

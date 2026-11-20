@@ -18,6 +18,12 @@
                             class="bi bi-phone fs-2 text-primary"></i>
                     </div>
                 </div>
+                @if ($lowStockProducts > 0)
+                    <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <span><i class="fas fa-exclamation-triangle mr-2"></i><strong>{{ number_format($lowStockProducts) }} produk</strong> memiliki stok 5 unit atau kurang dan perlu diperiksa.</span>
+                        <a href="{{ route('inventory.low-stock') }}" class="btn btn-sm btn-warning mt-2 mt-md-0">Lihat Daftar Restock</a>
+                    </div>
+                @endif
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">

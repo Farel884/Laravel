@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -30,10 +29,5 @@ class Product extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
-    }
-
-    public function favoritedBy(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class)->withTimestamps();
     }
 }

@@ -11,16 +11,11 @@
                 <h5 class="font-weight-bold text-gray-800 mb-1">Daftar Produk</h5>
                 <p class="text-muted small mb-0">Cari dan kelola seluruh produk yang tersedia.</p>
             </div>
-            <div class="mt-3 mt-md-0">
-                <a href="{{ route('favorites.index') }}" class="btn btn-outline-danger">
-                    <i class="fas fa-heart mr-1"></i>Favorit
+            @if (auth()->user()->role === 'admin')
+                <a href="{{ route('products.create') }}" class="btn btn-primary mt-3 mt-md-0">
+                    <i class="fas fa-plus mr-2"></i>Tambah Produk
                 </a>
-                @if (auth()->user()->role === 'admin')
-                    <a href="{{ route('products.create') }}" class="btn btn-primary ml-2">
-                        <i class="fas fa-plus mr-2"></i>Tambah Produk
-                    </a>
-                @endif
-            </div>
+            @endif
         </div>
     </div>
     <div class="card-body">
@@ -62,7 +57,6 @@
                         <th class="border-0">Merek</th>
                         <th class="border-0">Harga</th>
                         <th class="border-0 text-center">Stok</th>
-                        <th class="border-0 text-center">Favorit</th>
                         @if (auth()->user()->role === 'admin')
                             <th class="border-0 text-right">Aksi</th>
                         @endif
@@ -88,24 +82,6 @@
                                     {{ number_format($product->stock) }}
                                 </span>
                             </td>
-                            <td class="text-center">
-                                @if ($product->favoritedBy->isNotEmpty())
-                                    <form method="POST" action="{{ route('products.favorite.destroy', $product) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" type="submit" title="Hapus dari favorit" aria-label="Hapus {{ $product->name }} dari favorit">
-                                            <i class="fas fa-heart"></i>
-                                        </button>
-                                    </form>
-                                @else
-                                    <form method="POST" action="{{ route('products.favorite.store', $product) }}">
-                                        @csrf
-                                        <button class="btn btn-sm btn-outline-danger" type="submit" title="Tambah ke favorit" aria-label="Tambah {{ $product->name }} ke favorit">
-                                            <i class="far fa-heart"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                            </td>
                             @if (auth()->user()->role === 'admin')
                                 <td class="text-right">
                                     <div class="d-inline-flex align-items-center">
@@ -125,7 +101,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role === 'admin' ? 9 : 8 }}" class="text-center py-5">
+                            <td colspan="{{ auth()->user()->role === 'admin' ? 8 : 7 }}" class="text-center py-5">
                                 <i class="fas fa-box-open fa-2x text-gray-300 mb-3"></i>
                                 <p class="text-muted mb-0">Belum ada produk yang ditemukan.</p>
                             </td>

@@ -71,6 +71,9 @@
                     </div>
                 </div>
             </form>
+            <a href="{{ route('sales.export', request()->only(['date_from', 'date_to', 'product_id'])) }}" class="btn btn-outline-success">
+                <i class="fas fa-file-csv mr-1"></i>Unduh CSV
+            </a>
         </div>
     </div>
 

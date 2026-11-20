@@ -19,14 +19,13 @@
             <span>Dashboard</span></a>
     </li>
 
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('favorites.index') }}">
-            <i class="fas fa-fw fa-heart"></i>
-            <span>Produk Favorit</span>
-        </a>
-    </li>
-
     @if (auth()->user()?->role === 'admin')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('inventory.low-stock') }}">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Stok Menipis</span>
+            </a>
+        </li>
         <li class="nav-item">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSales"
                 aria-expanded="true" aria-controls="collapseSales">

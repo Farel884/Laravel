@@ -11,10 +11,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::with([
-            'category',
-            'favoritedBy' => fn ($query) => $query->whereKey($request->user()->getKey()),
-        ])
+        $products = Product::with('category')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $keyword = $request->string('q')->toString();
                 $query->where(function ($q) use ($keyword) {
